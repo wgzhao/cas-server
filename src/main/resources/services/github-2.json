@@ -1,0 +1,6 @@
+{
+  "@class" : "org.apereo.cas.services.CasRegisteredService",
+  "serviceId" : "https://scrm.gp51.com",
+  "name" : "GitHub",
+  "id" : 1001
+}

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Specify the refresh internal in seconds. -->
+<Configuration monitorInterval="5" packages="org.apereo.cas.logging">
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %p [%c] - &lt;%m&gt;%n"/>
+        </Console>
+        <CasAppender name="casConsole">
+            <AppenderRef ref="console" />
+        </CasAppender>
+    </Appenders>
+    <Loggers>
+        <AsyncLogger name="com.couchbase" level="warn" additivity="false" includeLocation="true">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.apereo.cas.web.CasWebApplication" level="debug" additivity="false" includeLocation="true">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.security" level="debug" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.boot.autoconfigure.security" level="info" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.jasig.cas.client" level="info" additivity="false" includeLocation="true">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.apereo" level="info" additivity="false" includeLocation="true">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.apereo.services.persondir" level="warn" additivity="false" includeLocation="true">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.apache" level="error" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.cloud" level="info" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.cloud.context" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.boot" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.aop" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.boot.actuate.autoconfigure" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.webflow" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.session" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.amqp" level="off" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.integration" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.messaging" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.web" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.orm.jpa" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.scheduling" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.thymeleaf" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.opensaml" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="net.sf.ehcache" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="com.ryantenney.metrics" level="warn" additivity="false">
+            <AppenderRef ref="console"/>
+        </AsyncLogger>
+        <AsyncLogger name="net.jradius" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.openid4java" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.ldaptive" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="com.hazelcast" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.context.annotation" level="off" additivity="false" />
+        <AsyncLogger name="org.springframework.boot.devtools" level="off" additivity="false" />
+        <AsyncLogger name="org.jasig.spring" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.springframework.web.socket" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.apache.cxf" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.apache.http" level="warn" additivity="false">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+
+
+        <AsyncRoot level="debug">
+            <AppenderRef ref="casConsole"/>
+        </AsyncRoot>
+    </Loggers>
+</Configuration>
