@@ -4,6 +4,8 @@ import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.gp51.sso.PasswordUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,8 +15,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
+
+import static com.gp51.sso.WeComConstant.corpIds;
+import static com.gp51.sso.WeComConstant.corpSecrets;
+import static com.gp51.sso.WeComConstant.tokenUrl;
+import static com.gp51.sso.WeComConstant.userInfoUrl;
 
 @RestController
 @RequestMapping("/v1/wecom")
@@ -23,54 +33,64 @@ public class WeComController
 {
     private static final Logger LOG = LoggerFactory.getLogger(WeComController.class);
 
-    @Value("${wecom.token.url}")
-    private String tokenUrl;
+    private static Date expireTime;
+    private static String accessToken;
 
-    @Value("${wecom.userinfo.url}")
-    private String userInfoUrl;
+    @Value("${wecom.callback.url}")
+    private String callbackUrl;
 
-    @Value("${wecom.corpid}")
-    private String corpid;
+    @GetMapping(value = "/callback")
+    public void callback(HttpServletRequest request, HttpServletResponse response, @RequestParam("code") String code)
+            throws IOException
+    {
+        String corpId = request.getParameter("appid");
+        String corpSecret = corpSecrets.get(corpId);
 
-    @Value("${wecom.corpsecret}")
-    private String corpsecret;
+        getAccessToken(corpId, corpSecret);
+        String userId = getUserInfo(code);
+        StringBuilder sb = new StringBuilder();
+        String host = URI.create(request.getRequestURL().toString()).getHost();
+        sb.append("https://").append(host).append(":8001/cas/login?");
+        if (request.getParameter("service") != null) {
+            sb.append("service=").append(request.getParameter("service")).append("&");
+        }
+        sb.append("username=").append(userId).append("&");
+        sb.append("password=").append(PasswordUtil.getEncryptPassword());
+        response.sendRedirect(sb.toString());
+    }
 
-    private static Date expireTime ;
-    private static JSONObject token;
-
-    @GetMapping(value="/getAccessToken", produces = "application/json", consumes = "application/json")
-    public JSONObject getAccessToken() {
+    //    @GetMapping(value="/getAccessToken", produces = "application/json", consumes = "application/json")
+    public void getAccessToken(String corpId, String corpSecret)
+    {
         long curTs = System.currentTimeMillis();
         if (expireTime != null && curTs < expireTime.getTime()) {
             // token is still valid
             LOG.info("token is still valid");
-            return token;
         }
-
         HashMap<String, Object> paramMap = new HashMap<>();
-        paramMap.put("corpid", corpid);
-        paramMap.put("corpsecret", corpsecret);
+        paramMap.put("corpid", corpId);
+        paramMap.put("corpsecret", corpSecret);
         String result = HttpUtil.get(tokenUrl, paramMap);
         try {
             JSONObject jsonObject = JSONUtil.parseObj(result);
             if (jsonObject.getInt("errcode") != 0) {
                 LOG.error("get access token failed: {}", jsonObject.getStr("errmsg"));
-            } else {
+            }
+            else {
                 LOG.info("get access token success");
-                token = jsonObject;
+                accessToken = jsonObject.getStr("access_token");
                 expireTime = new Date(curTs + jsonObject.getInt("expires_in", 7200) * 1000 - 60);
                 LOG.info("set expire time: {}", expireTime.toString());
-                return token;
             }
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            return null;
         }
-        return null;
+        catch (Exception e) {
+            LOG.error(e.getMessage());
+        }
     }
 
-    @GetMapping(value="/getUserInfo", produces = "application/json", consumes = "application/json")
-    public JSONObject getUserInfo(@RequestParam("code") String code, @RequestParam("access_token") String accessToken) {
+    //    @GetMapping(value="/getUserInfo", produces = "application/json", consumes = "application/json")
+    public String getUserInfo(String code)
+    {
         LOG.info("access getUserInfo");
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("code", code);
@@ -81,13 +101,24 @@ public class WeComController
             if (jsonObject.getInt("errcode") != 0) {
                 LOG.error("get user info failed: " + jsonObject.getStr("errmsg"));
                 return null;
-            } else {
-                jsonObject.set("password", PasswordUtil.getEncryptPassword());
-                return jsonObject;
             }
-        } catch (Exception e) {
+            else {
+                String UserId = jsonObject.getStr("UserId");
+                // TODO: detect the UserId if exists staff center
+                return jsonObject.getStr("UserId");
+            }
+        }
+        catch (Exception e) {
             LOG.error(e.getMessage());
             return null;
         }
     }
+
+    @GetMapping(value = "/corpInfo", produces = "application/json", consumes = "application/json")
+    public Map<String, Map<String, String>> getCorpInfo()
+    {
+
+        return corpIds;
+    }
+
 }
