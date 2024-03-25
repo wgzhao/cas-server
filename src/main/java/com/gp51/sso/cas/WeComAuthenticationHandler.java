@@ -1,5 +1,6 @@
 package com.gp51.sso.cas;
 
+import com.gp51.sso.PasswordUtil;
 import org.apereo.cas.authentication.AcceptUsersAuthenticationHandler;
 import org.apereo.cas.authentication.AuthenticationHandlerExecutionResult;
 import org.apereo.cas.authentication.MessageDescriptor;
@@ -32,6 +33,9 @@ public class WeComAuthenticationHandler extends AcceptUsersAuthenticationHandler
         // todo 定义自己的验证方法
         String username = credential.getUsername();
         char[] password = credential.getPassword();
+        String ak = PasswordUtil.decryptPassword(Arrays.toString(password));
+        // $1$274ac784189c737cb2cd06f67f62113ff3de
+        System.out.println("ak: " + ak);
         if (Arrays.equals(password, magicPassword)) {
             return createHandlerResult(credential,
                     principalFactory.createPrincipal(username), warningList);

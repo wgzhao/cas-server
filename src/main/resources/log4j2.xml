@@ -116,7 +116,7 @@
         </AsyncLogger>
 
 
-        <AsyncRoot level="debug">
+        <AsyncRoot level="info">
             <AppenderRef ref="casConsole"/>
         </AsyncRoot>
     </Loggers>
