@@ -36,9 +36,6 @@ public class WeComController
     private static Date expireTime;
     private static String accessToken;
 
-    @Value("${wecom.callback.url}")
-    private String callbackUrl;
-
     @GetMapping(value = "/callback")
     public void callback(HttpServletRequest request, HttpServletResponse response, @RequestParam("code") String code)
             throws IOException
