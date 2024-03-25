@@ -10,6 +10,9 @@ function json2select(json) {
 function getWecomQR() {
     var corpid = $('#corp').val();
     console.log(corpid);
+    if (localStorage.corpInfo == null) {
+        getCorpInfo();
+    }
     var corpInfo = JSON.parse(localStorage.corpInfo);
     var weParam = corpInfo[corpid];
     weParam["id"] = "wx_gp51";
@@ -25,7 +28,6 @@ function getWecomQR() {
     if (params.get('service')) {
         weParam['redirect_uri'] = weParam['redirect_uri'] + '?service=' + params.get('service');
     }
-    console.log(weParam);
     window.WwLogin(weParam);
 }
 
