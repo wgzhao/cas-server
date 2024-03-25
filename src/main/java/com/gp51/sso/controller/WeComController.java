@@ -35,7 +35,7 @@ public class WeComController
     private String corpsecret;
 
     // for wecom user, we fill a fixed password
-    @Value("${wecom.user.pseduo}")
+    @Value("${wecom.user.pseudo}")
     private String pseudo;
 
     private static Date expireTime ;
@@ -66,7 +66,7 @@ public class WeComController
                 return token;
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOG.error(e.getMessage());
             return null;
         }
         return null;
@@ -74,7 +74,7 @@ public class WeComController
 
     @GetMapping("/getUserInfo")
     public JSONObject getUserInfo(@RequestParam("code") String code, @RequestParam("access_token") String accessToken) {
-        System.out.println("access getUserInfo");
+        LOG.info("access getUserInfo");
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("code", code);
         paramMap.put("access_token", accessToken);
@@ -82,14 +82,14 @@ public class WeComController
         try {
             JSONObject jsonObject = JSONUtil.parseObj(result);
             if (jsonObject.getInt("errcode") != 0) {
-                System.out.println("get user info failed: " + jsonObject.getStr("errmsg"));
+                LOG.error("get user info failed: " + jsonObject.getStr("errmsg"));
                 return null;
             } else {
                 jsonObject.set("password", pseudo);
                 return jsonObject;
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOG.error(e.getMessage());
             return null;
         }
     }
