@@ -21,6 +21,7 @@ function getWecomQR() {
         redirect_uri = location.protocol + "//" + location.hostname + ":" + location.port + "/cas/v1/wecom/callback";
     }
     weParam["redirect_uri"] = redirect_uri;
+    var params = new URLSearchParams(window.location.search)
     if (params.get('service')) {
         weParam['redirect_uri'] = weParam['redirect_uri'] + '?service=' + params.get('service');
     }
@@ -49,7 +50,6 @@ function getCorpInfo() {
 
 function wxQR() {
 
-    var params = new URLSearchParams(window.location.search)
     var username = params.get('username')
     if (username != null) {
         $("#username").val(username);
