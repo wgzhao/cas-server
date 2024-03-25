@@ -9,15 +9,15 @@ import org.apereo.cas.authentication.principal.PrincipalFactory;
 import org.apereo.cas.services.ServicesManager;
 import org.springframework.beans.factory.annotation.Value;
 
+import javax.security.auth.login.FailedLoginException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class WeComAuthenticationHandler extends AcceptUsersAuthenticationHandler
 {
-    @Value("${wecom.user.pseudo}")
-    private String pseudo;
-
     private static final List<MessageDescriptor> warningList = new ArrayList<>();
 
     private ServicesManager servicesManager;
@@ -29,16 +29,17 @@ public class WeComAuthenticationHandler extends AcceptUsersAuthenticationHandler
     protected AuthenticationHandlerExecutionResult authenticateUsernamePasswordInternal(
             UsernamePasswordCredential credential,
             String originalPassword) throws Throwable {
-        char[] magicPassword = pseudo.toCharArray();
         // todo 定义自己的验证方法
         String username = credential.getUsername();
-        char[] password = credential.getPassword();
-        String ak = PasswordUtil.decryptPassword(Arrays.toString(password));
-        // $1$274ac784189c737cb2cd06f67f62113ff3de
-        System.out.println("ak: " + ak);
-        if (Arrays.equals(password, magicPassword)) {
-            return createHandlerResult(credential,
-                    principalFactory.createPrincipal(username), warningList);
+        if (PasswordUtil.isWecomPassword(originalPassword)) {
+            // decrypt password
+            //$1$2cf88021c6d36b9a7d86373a3937cccc2444
+            if (PasswordUtil.isPseudoPassword(originalPassword)) {
+                return createHandlerResult(credential,
+                        principalFactory.createPrincipal(username), warningList);
+            } else {
+                throw new FailedLoginException("Sorry, you are a failure!");
+            }
         } else {
             // invoke super auth method
             return super.authenticateUsernamePasswordInternal(credential, originalPassword);
