@@ -13,15 +13,11 @@ import java.util.UUID;
 
 public class PasswordUtil
 {
-    //随机生成密钥
-//    public final static byte[] key = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue()).getEncoded();
-
     private final static byte[] key ="24063f35a511a2f3d088cd2fe2143981".getBytes();
     private final static byte[] salt = "DYgjCEIKaJa2W9xN".getBytes();
 
     private final static String pseudo = "37617d22";
-    //构建
-//    private final static SymmetricCrypto aes = new SymmetricCrypto(SymmetricAlgorithm.AES, key);
+
     private static final AES aes = new AES("CBC", "PKCS7Padding", key, salt);
 
     private static final String passPrefix = "$1$2";
@@ -67,9 +63,5 @@ public class PasswordUtil
             return false;
         }
         return password.startsWith(passPrefix) && Objects.equals(decryptPassword(password), pseudo);
-    }
-    public static void main(String[] args)
-    {
-        System.out.println(encryptPassword("37617d22"));
     }
 }

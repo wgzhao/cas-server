@@ -1,3 +1,4 @@
 com.gp51.sso.config.WeComOverlayConfiguration
 com.gp51.sso.controller.WeComController
 com.gp51.sso.WeComConstant
+com.gp51.sso.service.WeComService

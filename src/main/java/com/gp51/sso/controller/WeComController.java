@@ -4,10 +4,12 @@ import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.gp51.sso.PasswordUtil;
+import com.gp51.sso.service.WeComService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,9 +34,14 @@ import static com.gp51.sso.WeComConstant.userInfoUrl;
 public class WeComController
 {
     private static final Logger LOG = LoggerFactory.getLogger(WeComController.class);
-
     private static Date expireTime;
     private static String accessToken;
+
+    @Value("${wecom.binding.url}")
+    private String bindingUrl;
+
+    @Autowired
+    WeComService wecomService;
 
     @GetMapping(value = "/callback")
     public void callback(HttpServletRequest request, HttpServletResponse response, @RequestParam("code") String code)
@@ -43,21 +50,26 @@ public class WeComController
         String corpId = request.getParameter("appid");
         String corpSecret = corpSecrets.get(corpId);
 
-        getAccessToken(corpId, corpSecret);
+        setAccessToken(corpId, corpSecret);
         String userId = getUserInfo(code);
+        String staffCode = wecomService.getStaffCode(userId, corpId);
+        if (staffCode == null || staffCode.isEmpty()) {
+            LOG.info("user not found in staff center, prepare redirect to {}{}", bindingUrl ,corpId);
+            response.sendRedirect(bindingUrl + corpId);
+            return;
+        }
         StringBuilder sb = new StringBuilder();
         String host = URI.create(request.getRequestURL().toString()).getHost();
         sb.append("https://").append(host).append(":8001/cas/login?");
         if (request.getParameter("service") != null) {
             sb.append("service=").append(request.getParameter("service")).append("&");
         }
-        sb.append("username=").append(userId).append("&");
+        sb.append("username=").append(staffCode).append("&");
         sb.append("password=").append(PasswordUtil.getEncryptPassword());
         response.sendRedirect(sb.toString());
     }
 
-    //    @GetMapping(value="/getAccessToken", produces = "application/json", consumes = "application/json")
-    public void getAccessToken(String corpId, String corpSecret)
+    private void setAccessToken(String corpId, String corpSecret)
     {
         long curTs = System.currentTimeMillis();
         if (expireTime != null && curTs < expireTime.getTime()) {
@@ -85,8 +97,7 @@ public class WeComController
         }
     }
 
-    //    @GetMapping(value="/getUserInfo", produces = "application/json", consumes = "application/json")
-    public String getUserInfo(String code)
+    private String getUserInfo(String code)
     {
         LOG.info("access getUserInfo");
         HashMap<String, Object> paramMap = new HashMap<>();
@@ -100,7 +111,6 @@ public class WeComController
                 return null;
             }
             else {
-                String UserId = jsonObject.getStr("UserId");
                 // TODO: detect the UserId if exists staff center
                 return jsonObject.getStr("UserId");
             }
@@ -114,8 +124,6 @@ public class WeComController
     @GetMapping(value = "/corpInfo", produces = "application/json", consumes = "application/json")
     public Map<String, Map<String, String>> getCorpInfo()
     {
-
         return corpIds;
     }
-
 }
