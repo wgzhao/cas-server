@@ -23,11 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.gp51.sso.WeComConstant.corpIds;
-import static com.gp51.sso.WeComConstant.corpSecrets;
-import static com.gp51.sso.WeComConstant.tokenUrl;
-import static com.gp51.sso.WeComConstant.userInfoUrl;
-
 @RestController
 @RequestMapping("/v1/wecom")
 @CrossOrigin("*")
@@ -41,20 +36,23 @@ public class WeComController
     private String bindingUrl;
 
     @Autowired
-    WeComService wecomService;
+    WeComService weComService;
 
     @GetMapping(value = "/callback")
     public void callback(HttpServletRequest request, HttpServletResponse response, @RequestParam("code") String code)
             throws IOException
     {
         String corpId = request.getParameter("appid");
-        String corpSecret = corpSecrets.get(corpId);
-
+        String corpSecret = weComService.getSecret(corpId);
         setAccessToken(corpId, corpSecret);
         String userId = getUserInfo(code);
-        String staffCode = wecomService.getStaffCode(userId, corpId);
+        if (userId == null) {
+            LOG.error("get user info failed");
+            return;
+        }
+        String staffCode = weComService.getStaffCode(userId, corpId);
         if (staffCode == null || staffCode.isEmpty()) {
-            LOG.info("user not found in staff center, prepare redirect to {}{}", bindingUrl ,corpId);
+            LOG.info("UserId({}) with corpId({}) not found ,prepare redirect to {}", userId, corpId, bindingUrl);
             response.sendRedirect(bindingUrl + corpId);
             return;
         }
@@ -79,7 +77,7 @@ public class WeComController
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("corpid", corpId);
         paramMap.put("corpsecret", corpSecret);
-        String result = HttpUtil.get(tokenUrl, paramMap);
+        String result = HttpUtil.get(weComService.getTokenUrl(), paramMap);
         try {
             JSONObject jsonObject = JSONUtil.parseObj(result);
             if (jsonObject.getInt("errcode") != 0) {
@@ -99,19 +97,17 @@ public class WeComController
 
     private String getUserInfo(String code)
     {
-        LOG.info("access getUserInfo");
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("code", code);
         paramMap.put("access_token", accessToken);
-        String result = HttpUtil.get(userInfoUrl, paramMap);
+        String result = HttpUtil.get(weComService.getUserInfoUrl(), paramMap);
         try {
             JSONObject jsonObject = JSONUtil.parseObj(result);
             if (jsonObject.getInt("errcode") != 0) {
-                LOG.error("get user info failed: " + jsonObject.getStr("errmsg"));
+                LOG.error("get user info failed: {}",  jsonObject.getStr("errmsg"));
                 return null;
             }
             else {
-                // TODO: detect the UserId if exists staff center
                 return jsonObject.getStr("UserId");
             }
         }
@@ -124,6 +120,6 @@ public class WeComController
     @GetMapping(value = "/corpInfo", produces = "application/json", consumes = "application/json")
     public Map<String, Map<String, String>> getCorpInfo()
     {
-        return corpIds;
+        return weComService.getCorpInfo();
     }
 }

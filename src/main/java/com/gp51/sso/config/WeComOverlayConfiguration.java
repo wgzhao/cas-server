@@ -14,19 +14,22 @@ import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-public class WeComOverlayConfiguration {
+public class WeComOverlayConfiguration
+{
 
     @Autowired
     @Qualifier("servicesManager")
     private ServicesManager servicesManager;
 
     @Bean
-    public AuthenticationHandler weComAuthenticationHandler() {
+    public AuthenticationHandler weComAuthenticationHandler()
+    {
         return new WeComAuthenticationHandler(WeComAuthenticationHandler.class.getSimpleName(), servicesManager, new DefaultPrincipalFactory(), 1);
     }
 
     @Bean
-    public AuthenticationEventExecutionPlanConfigurer weComAuthenticationEventExecutionPlanConfigurer(@Qualifier("weComAuthenticationHandler") final AuthenticationHandler weComAuthenticationHandler) {
+    public AuthenticationEventExecutionPlanConfigurer weComAuthenticationEventExecutionPlanConfigurer(@Qualifier("weComAuthenticationHandler") final AuthenticationHandler weComAuthenticationHandler)
+    {
         return plan -> plan.registerAuthenticationHandler(weComAuthenticationHandler);
     }
 }

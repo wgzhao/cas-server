@@ -14,19 +14,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WeComAuthenticationHandler extends AcceptUsersAuthenticationHandler
+public class WeComAuthenticationHandler
+        extends AcceptUsersAuthenticationHandler
 {
     private static final List<MessageDescriptor> warningList = new ArrayList<>();
 
-    public WeComAuthenticationHandler(String name, ServicesManager servicesManager, PrincipalFactory principalFactory, Integer order) {
+    public WeComAuthenticationHandler(String name, ServicesManager servicesManager, PrincipalFactory principalFactory, Integer order)
+    {
         super(name, servicesManager, principalFactory, order, null);
     }
 
     @Override
     protected AuthenticationHandlerExecutionResult authenticateUsernamePasswordInternal(
             UsernamePasswordCredential credential,
-            String originalPassword) throws Throwable {
-
+            String originalPassword)
+            throws Throwable
+    {
 //        HttpServletRequest requestObj = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
 //        HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getResponse();
         // todo 定义自己的验证方法
@@ -37,10 +40,10 @@ public class WeComAuthenticationHandler extends AcceptUsersAuthenticationHandler
             attributes.put("authType", List.of("wecom"));
             Principal principal = principalFactory.createPrincipal(credential.getUsername(), attributes);
             return createHandlerResult(credential, principal, warningList);
-        } else {
+        }
+        else {
             // invoke super auth method
             return super.authenticateUsernamePasswordInternal(credential, originalPassword);
         }
     }
-
 }
