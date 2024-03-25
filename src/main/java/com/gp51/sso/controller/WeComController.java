@@ -3,6 +3,7 @@ package com.gp51.sso.controller;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.gp51.sso.PasswordUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,14 +35,10 @@ public class WeComController
     @Value("${wecom.corpsecret}")
     private String corpsecret;
 
-    // for wecom user, we fill a fixed password
-    @Value("${wecom.user.pseudo}")
-    private String pseudo;
-
     private static Date expireTime ;
-    private JSONObject token;
+    private static JSONObject token;
 
-    @GetMapping("/getAccessToken")
+    @GetMapping(value="/getAccessToken", produces = "application/json", consumes = "application/json")
     public JSONObject getAccessToken() {
         long curTs = System.currentTimeMillis();
         if (expireTime != null && curTs < expireTime.getTime()) {
@@ -72,7 +69,7 @@ public class WeComController
         return null;
     }
 
-    @GetMapping("/getUserInfo")
+    @GetMapping(value="/getUserInfo", produces = "application/json", consumes = "application/json")
     public JSONObject getUserInfo(@RequestParam("code") String code, @RequestParam("access_token") String accessToken) {
         LOG.info("access getUserInfo");
         HashMap<String, Object> paramMap = new HashMap<>();
@@ -85,7 +82,7 @@ public class WeComController
                 LOG.error("get user info failed: " + jsonObject.getStr("errmsg"));
                 return null;
             } else {
-                jsonObject.set("password", pseudo);
+                jsonObject.set("password", PasswordUtil.getEncryptPassword());
                 return jsonObject;
             }
         } catch (Exception e) {
