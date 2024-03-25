@@ -8,7 +8,6 @@
 
 - 新增了名为 `gp51` 的主题
 - 修改了 `casLoginView.html` 页面，内嵌了企业微信扫码登录逻辑
-- 增加了自定义认证，和项目 [sso-wecom-api](https://gitlab.gp51.com/sso-wecom-api) 配合，实对企业微信扫描的认证。
 
 ## 运行方式
 
