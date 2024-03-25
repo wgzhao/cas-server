@@ -8,6 +8,7 @@
     <properties>
         <cas.version>7.0.0</cas.version>
         <java.version>21</java.version>
+        <hutool.version>5.8.25</hutool.version>
     </properties>
 
     <dependencies>
@@ -35,6 +36,33 @@
             <artifactId>cas-server-core-authentication-api</artifactId>
             <version>${cas.version}</version>
         </dependency>
+
+        <!-- for custom REST api -->
+        <dependency>
+            <groupId>org.apereo.cas</groupId>
+            <artifactId>cas-server-support-rest</artifactId>
+            <version>${cas.version}</version>
+        </dependency>
+
+        <!-- for swagger -->
+        <dependency>
+            <groupId>org.apereo.cas</groupId>
+            <artifactId>cas-server-support-swagger</artifactId>
+            <version>${cas.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-http</artifactId>
+            <version>${hutool.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-json</artifactId>
+            <version>${hutool.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

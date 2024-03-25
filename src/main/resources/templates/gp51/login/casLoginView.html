@@ -73,13 +73,13 @@
                 if (code != null ) {
                     console.log("current code = " + code);
                     // ajax post to the wechat token url
-                    var tokenUrl = "/wecom/api/v1/getAccessToken";
+                    var tokenUrl = "/cas/v1/wecom/getAccessToken";
 
                     $.get(tokenUrl, function(data, status) {
                         if (status === "success") {
                             var token = data["access_token"];
                             console.log(token);
-                            $.get("/wecom/api/v1/getUserInfo", {"code": code, "access_token": token}).done(function(data, status) {
+                            $.get("/cas/v1/wecom/getUserInfo", {"code": code, "access_token": token}).done(function(data, status) {
                                 if (status === "success") {
                                     console.log(data);
                                     var userId = data['UserId'];
