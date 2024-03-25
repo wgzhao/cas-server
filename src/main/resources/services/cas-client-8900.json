@@ -1,0 +1,14 @@
+{
+  "@class" : "org.apereo.cas.services.CasRegisteredService",
+  "serviceId" : "^http://localhost:8900.*",
+  "name" : "cas-client",
+  "id" : 8900,
+  "matchingStrategy": {
+    "@class": "org.apereo.cas.services.FullRegexRegisteredServiceMatchingStrategy"
+  },
+  "attributeReleasePolicy" : {
+    "@class" : "org.apereo.cas.services.ReturnAllAttributeReleasePolicy"
+  },
+  "logoutType" : "BACK_CHANNEL",
+  "logoutUrl" : "http://localhost:8900"
+}
