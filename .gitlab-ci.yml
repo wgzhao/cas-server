@@ -1,7 +1,0 @@
-image: nexus.gp51.com/library/maven:3.8.8-eclipse-temurin-21-alpine
-include:
-  project: 'grp-arch/sp-push'
-  ref: main
-  file:
-    - argocd-maven-ci-new.yml
-
