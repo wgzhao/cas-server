@@ -15,9 +15,3 @@
 ```
 java -Dspring.profiles.include=<profile> -jar target/cas.war
 ```
-
-其访问流是：
-
-```
-Internet -> FW(218.76.56.86:10002) -> nginx(188.175.2.18:80) -> sso-cas/sso-wecom-api
-```
