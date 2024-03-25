@@ -13,10 +13,10 @@
         <AsyncLogger name="com.couchbase" level="warn" additivity="false" includeLocation="true">
             <AppenderRef ref="casConsole"/>
         </AsyncLogger>
-        <AsyncLogger name="org.apereo.cas.web.CasWebApplication" level="debug" additivity="false" includeLocation="true">
+        <AsyncLogger name="org.apereo.cas.web.CasWebApplication" level="info" additivity="false" includeLocation="true">
             <AppenderRef ref="casConsole"/>
         </AsyncLogger>
-        <AsyncLogger name="org.springframework.security" level="debug" additivity="false">
+        <AsyncLogger name="org.springframework.security" level="info" additivity="false">
             <AppenderRef ref="casConsole"/>
         </AsyncLogger>
         <AsyncLogger name="org.springframework.boot.autoconfigure.security" level="info" additivity="false">
