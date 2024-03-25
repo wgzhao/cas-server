@@ -14,7 +14,7 @@ import java.util.List;
 
 public class WeComAuthenticationHandler extends AcceptUsersAuthenticationHandler
 {
-    @Value("${wecom.user.pseduo}")
+    @Value("${wecom.user.pseudo}")
     private String pseudo;
 
     private static final List<MessageDescriptor> warningList = new ArrayList<>();
