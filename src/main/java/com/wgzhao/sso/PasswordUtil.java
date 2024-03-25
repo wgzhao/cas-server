@@ -1,16 +1,11 @@
-package com.gp51.sso;
+package com.wgzhao.sso;
 
 import cn.hutool.core.util.CharsetUtil;
-import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.symmetric.AES;
-import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
-import cn.hutool.crypto.symmetric.SymmetricCrypto;
-import com.gp51.sso.service.WeComService;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 

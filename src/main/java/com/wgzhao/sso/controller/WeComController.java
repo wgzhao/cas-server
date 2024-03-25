@@ -1,10 +1,10 @@
-package com.gp51.sso.controller;
+package com.wgzhao.sso.controller;
 
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import com.gp51.sso.PasswordUtil;
-import com.gp51.sso.service.WeComService;
+import com.wgzhao.sso.PasswordUtil;
+import com.wgzhao.sso.service.WeComService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -53,7 +53,8 @@ public class WeComController
         String staffCode = weComService.getStaffCode(userId, corpId);
         if (staffCode == null || staffCode.isEmpty()) {
             LOG.info("UserId({}) with corpId({}) not found ,prepare redirect to {}", userId, corpId, bindingUrl);
-            response.sendRedirect(bindingUrl + corpId);
+            String redirectUrl = "%s?weChatCorpId=%s&weChatUserId=%s".formatted(bindingUrl, corpId, userId);
+            response.sendRedirect(redirectUrl);
             return;
         }
         StringBuilder sb = new StringBuilder();

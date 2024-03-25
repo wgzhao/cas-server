@@ -6,11 +6,11 @@
 
 在官方版本的基础上，主要做了以下改动
 
-- 新增了名为 `gp51` 的主题
+- 新增了名为 `mytheme` 的主题
 - 修改了 `casLoginView.html` 页面，内嵌了企业微信扫码登录逻辑
 
 ## 运行方式
 
 ```
-java -Dspring.profiles.include=<profile> -jar target/cas.war
+java -Dspring.profiles.include=<profile> -jar target/cas-<version>.war
 ```
