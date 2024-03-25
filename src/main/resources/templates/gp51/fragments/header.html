@@ -16,16 +16,6 @@
     <header id="app-bar" class="mdc-top-app-bar mdc-top-app-bar--fixed mdc-elevation--z4 shadow-sm">
         <nav class="mdc-top-app-bar__row navbar navbar-dark bg-dark">
             <div class="container-fluid container-fluid d-flex align-items-center justify-content-between">
-                <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-                    <button th:if="${'true' == #strings.defaultString(#themes.code('cas.drawer-menu.enabled'), 'true')}"
-                            class="mdc-icon-button mdc-top-app-bar__navigation-icon  btn btn-outline-light"
-                            id="drawerButton"
-                            data-bs-toggle="offcanvas"
-                            data-bs-target="#app-drawer">
-                        <span class="mdi mdi-menu fa fa-bars"></span>
-                        <span class="visually-hidden">menu</span>
-                    </button>
-                </section>
                 <section class="mdc-top-app-bar__section">
                     <div class="cas-brand mx-auto">
                         <h1 class="visually-hidden" th:text="${#strings.defaultString(#themes.code('cas.theme.name'), 'CAS')}">CAS</h1>
@@ -37,34 +27,11 @@
                         </a>
                     </div>
                 </section>
-                <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end">
-                    <button id="cas-notifications-menu"
-                            th:if="${'true' == #strings.defaultString(#themes.code('cas.notifications-menu.enabled'), 'true')}"
-                            class="mdc-icon-button mdc-top-app-bar__action-item cas-notification-toggle btn btn-outline-light"
-                            aria-label="Bookmark this page"
-                            data-bs-toggle="modal"
-                            data-bs-target="#cas-notification-dialog">
-                        <span class="mdi mdi-bell-alert fa fa-bell"></span>
-                        <span class="visually-hidden">notifications</span>
-                        <i id="notifications-count" class="notifications-count count">2</i>
-                    </button>
-
-                    <a id="cas-user-account"
-                       th:href="@{/account}"
-                       th:if="${accountProfileManagementEnabled != null
-                        && accountProfileManagementEnabled
-                        && ticketGrantingTicketId != null}"
-                       class="mdc-icon-button mdc-top-app-bar__action-item"
-                       aria-label="User Account">
-                        <span class="mdi mdi-account-group"></span>
-                        <span class="visually-hidden">user account</span>
-                    </a>
-                </section>
             </div>
         </nav>
     </header>
 
-    <div th:replace="~{fragments/logindrawer :: logindrawer}"/>
+<!--    <div th:replace="~{fragments/logindrawer :: logindrawer}"/>-->
 
     <script>var countMessages = 0;</script>
     <div
