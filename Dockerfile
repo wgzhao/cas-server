@@ -11,5 +11,5 @@ EXPOSE 8080 8443
 
 ENV VERSION=${version} PROJECT_NAME=${project_name}
 
-CMD java -server -noverify -Xmx2048M -jar /usr/app/${PROJECT_NAME}-${VERSION}.war
+CMD java -server -noverify  -jar /usr/app/${PROJECT_NAME}-${VERSION}.war
 
