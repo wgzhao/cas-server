@@ -1,0 +1,22 @@
+{
+  "@class" : "org.apereo.cas.services.CasRegisteredService",
+  "serviceId" : "^https://.*.gp51.com/.*",
+  "name" : "gp51-client",
+  "id" : 443,
+  "matchingStrategy": {
+    "@class": "org.apereo.cas.services.FullRegexRegisteredServiceMatchingStrategy"
+  },
+  "attributeReleasePolicy" : {
+    "@class" : "org.apereo.cas.services.ReturnAllAttributeReleasePolicy"
+  },
+  "ticketGrantingTicketExpirationPolicy": {
+      "@class": "org.apereo.cas.services.DefaultRegisteredServiceTicketGrantingTicketExpirationPolicy",
+      "maxTimeToLiveInSeconds": 5
+    },
+"serviceTicketExpirationPolicy": {
+      "@class": "org.apereo.cas.services.DefaultRegisteredServiceServiceTicketExpirationPolicy",
+      "numberOfUses": 20,
+      "timeToLive": "60"
+    }
+
+}
