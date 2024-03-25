@@ -1,6 +1,6 @@
 function json2select(json) {
-    var html = '<select id="corp" onchange="getWecomQR()">';
-    for (var key in json) {
+    let html = '<select id="corp" onchange="getWecomQR()">';
+    for (const key in json) {
         html += '<option value="' + json[key].entityId + '">' + json[key].name + '</option>';
     }
     html += '</select>';
@@ -8,23 +8,23 @@ function json2select(json) {
 }
 
 function getWecomQR() {
-    var corpid = $('#corp').val();
+    const corpid = $('#corp').val();
     console.log(corpid);
     if (localStorage.corpInfo == null) {
         getCorpInfo();
     }
-    var corpInfo = JSON.parse(localStorage.corpInfo);
-    var weParam = corpInfo[corpid];
-    weParam["id"] = "wx_gp51";
+    const corpInfo = JSON.parse(localStorage.corpInfo);
+    const weParam = corpInfo[corpid];
+    weParam["id"] = "wx_div";
     // add redirect_uri via current location
-    var redirect_uri;
-    if (location.port == "") {
+    let redirect_uri;
+    if (location.port === "") {
         redirect_uri = location.protocol + "//" + location.hostname + "/cas/v1/wecom/callback";
     } else {
         redirect_uri = location.protocol + "//" + location.hostname + ":" + location.port + "/cas/v1/wecom/callback";
     }
     weParam["redirect_uri"] = redirect_uri;
-    var params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(window.location.search);
     if (params.get('service')) {
         weParam['redirect_uri'] = weParam['redirect_uri'] + '?service=' + params.get('service');
     }
@@ -51,8 +51,8 @@ function getCorpInfo() {
 }
 
 function wxQR() {
-    var params = new URLSearchParams(window.location.search)
-    var username = params.get('username')
+    const params = new URLSearchParams(window.location.search);
+    const username = params.get('username');
     if (username != null) {
         $("#username").val(username);
         $("#password").val(params.get('password'));

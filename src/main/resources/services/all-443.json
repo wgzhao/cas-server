@@ -1,7 +1,7 @@
 {
   "@class" : "org.apereo.cas.services.CasRegisteredService",
-  "serviceId" : "^https://.*.gp51.com/.*",
-  "name" : "gp51-client",
+  "serviceId" : "^https://.*.com/.*",
+  "name" : "cas-client",
   "id" : 443,
   "matchingStrategy": {
     "@class": "org.apereo.cas.services.FullRegexRegisteredServiceMatchingStrategy"

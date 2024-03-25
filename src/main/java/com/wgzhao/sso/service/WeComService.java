@@ -1,4 +1,4 @@
-package com.gp51.sso.service;
+package com.wgzhao.sso.service;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;

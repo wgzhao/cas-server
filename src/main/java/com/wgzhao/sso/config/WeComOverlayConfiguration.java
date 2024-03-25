@@ -1,6 +1,6 @@
-package com.gp51.sso.config;
+package com.wgzhao.sso.config;
 
-import com.gp51.sso.cas.WeComAuthenticationHandler;
+import com.wgzhao.sso.cas.WeComAuthenticationHandler;
 import org.apereo.cas.authentication.AuthenticationEventExecutionPlanConfigurer;
 import org.apereo.cas.authentication.AuthenticationHandler;
 import org.apereo.cas.authentication.principal.DefaultPrincipalFactory;

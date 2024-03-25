@@ -1,6 +1,6 @@
-package com.gp51.sso.cas;
+package com.wgzhao.sso.cas;
 
-import com.gp51.sso.PasswordUtil;
+import com.wgzhao.sso.PasswordUtil;
 import org.apereo.cas.authentication.AcceptUsersAuthenticationHandler;
 import org.apereo.cas.authentication.AuthenticationHandlerExecutionResult;
 import org.apereo.cas.authentication.MessageDescriptor;
