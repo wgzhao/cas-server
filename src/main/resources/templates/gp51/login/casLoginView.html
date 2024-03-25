@@ -36,22 +36,18 @@
                 <div class="card-body pb-4">
                     <div class="card-title">
                         <div class="text-center">
-                            <h3 class="mt-md-0 mt-4">
-                                <i class="mdi mdi-qrcode-scan fas fa-qrcode"></i>
-                                <span>WeCom Login with QR Code</span>
-                            </h3>
                             <section>
                                 <div id="qrerror" class="banner banner-danger alert alert-danger banner-dismissible"
                                      style="display:none;">
                                     <p th:utext="#{cas.authn.qr.fail}">Error</p>
                                 </div>
                             </section>
-                            <p>Scan the QR code with your mobile device to begin the login flow. If your credentials
-                                are accepted, you will automatically proceed to the next step.</p>
                         </div>
                     </div>
                     <div class="card-text">
-                        <div id="wx_gp51"></div>
+                        <div class="text-center">
+                            <div id="wx_gp51"></div>
+                        </div>
                     </div>
                 </div>
             </div>
