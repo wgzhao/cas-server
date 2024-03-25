@@ -10,9 +10,11 @@
 - 修改了 `casLoginView.html` 页面，内嵌了企业微信扫码登录逻辑
 - 增加了自定义认证，和项目 [sso-wecom-api](https://gitlab.gp51.com/sso-wecom-api) 配合，实对企业微信扫描的认证。
 
-## 部署注意
+## 运行方式
 
-因为企业微信回调地址的限制，目前绑定了域名 `https://cas-test.gp622.com:10002`
+```
+java -Dspring.profiles.include=<profile> -jar target/cas.war
+```
 
 其访问流是：
 
