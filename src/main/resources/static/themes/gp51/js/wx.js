@@ -21,6 +21,9 @@ function getWecomQR() {
         redirect_uri = location.protocol + "//" + location.hostname + ":" + location.port + "/cas/v1/wecom/callback";
     }
     weParam["redirect_uri"] = redirect_uri;
+    if (params.get('service')) {
+        weParam['redirect_uri'] = weParam['redirect_uri'] + '?service=' + params.get('service');
+    }
     console.log(weParam);
     window.WwLogin(weParam);
 }
@@ -55,9 +58,6 @@ function wxQR() {
         $("#fm1").submit();
     } else {
         // initial wecom qrcode
-        if (params.get('service')) {
-            weParam['redirect_uri'] = weParam['redirect_uri'] + '?service=' + params.get('service');
-        }
         getCorpInfo();
         getWecomQR()
     }
