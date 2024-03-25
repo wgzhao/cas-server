@@ -49,7 +49,7 @@ function getCorpInfo() {
 }
 
 function wxQR() {
-
+    var params = new URLSearchParams(window.location.search)
     var username = params.get('username')
     if (username != null) {
         $("#username").val(username);
