@@ -1,91 +1,113 @@
 package com.wgzhao.sso.service;
 
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
+import com.wgzhao.sso.dto.CorpInfo;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
-import static cn.hutool.core.util.ClassLoaderUtil.getClassLoader;
 
 @Service
+@Slf4j
 public class WeComService
 {
+    @Getter
     private final String tokenUrl = "https://qyapi.weixin.qq.com/cgi-bin/gettoken";
+
+    @Getter
     private final String userInfoUrl = "https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo";
 
-    private final Map<String, Map<String, String>> corpIds = new HashMap<>();
+    private static BasicDataSource dataSource = null;
 
-    private final Map<String, String> corpSecrets = new HashMap<>();
+    private final String profile;
 
-    private final Connection connection;
+    private final String encryptKey;
 
     @Autowired
     public WeComService(@Value("${cas.authn.jdbc.query[0].url}") String jdbcUrl,
-                        @Value("${cas.authn.jdbc.query[0].user}") String jdbcUser,
-                        @Value("${cas.authn.jdbc.query[0].password}") String password) {
-        try {
-            this.connection = DriverManager.getConnection(jdbcUrl, jdbcUser, password);
+            @Value("${cas.authn.jdbc.query[0].user}") String jdbcUser,
+            @Value("${cas.authn.jdbc.query[0].password}") String password,
+            @Value("${spring.profiles.include}") String activeProfile,
+            @Value("${wecom.encrypt.key}") String encryptKey
+    )
+    {
+        this.profile = activeProfile;
+        this.encryptKey = encryptKey;
+
+        dataSource = new BasicDataSource();
+        dataSource.setUrl(jdbcUrl);
+        dataSource.setUsername(jdbcUser);
+        dataSource.setPassword(password);
+
+        dataSource.setMinIdle(3);
+        dataSource.setMaxIdle(5);
+        dataSource.setMaxTotal(8);
+    }
+
+    public List<CorpInfo> getCorpInfo()
+    {
+        List<CorpInfo> result = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection()) {
+            String sql = String.format(
+                    "select * from cas_wecom_appliers u where u.profile= '%s' ", profile);
+            ResultSet resultSet = connection.createStatement().executeQuery(sql);
+            while (resultSet.next()) {
+                result.add(new CorpInfo(
+                        resultSet.getInt("id"),
+                        resultSet.getString("name"),
+                        resultSet.getString("agentid"),
+                        resultSet.getString("appid"),
+                        resultSet.getString("corpid"),
+                        resultSet.getString("state")
+                ));
+            }
         }
         catch (SQLException e) {
-            throw new RuntimeException("init WeComService error: ", e);
+            log.error("getCorpInfo error: ", e);
         }
-        // load json file
-        try {
-            Object data = Objects.requireNonNull(getClassLoader().getResource("wecom.json")).getContent();
-            JSONObject object = JSONUtil.parseObj(data);
-
-            for (Map.Entry<String, Object> entry : object.getJSONObject("secrets")) {
-                corpSecrets.put(entry.getKey(), entry.getValue().toString());
-            }
-            for (Map.Entry<String, Object> entry : object.getJSONObject("entity")) {
-                corpIds.put(entry.getKey(), (Map<String, String>) entry.getValue());
-            }
-        }
-        catch (Exception e) {
-            throw new RuntimeException("parse wecom.json error: ", e);
-        }
+        return result;
     }
 
-    public Map<String, Map<String, String>> getCorpInfo()
+    public String getSecret(String corpId)
     {
-        return corpIds;
-    }
-
-    public String getSecret(String corpId) {
-        return corpSecrets.getOrDefault(corpId, null);
-    }
-
-    public String getTokenUrl()  {
-        return tokenUrl;
-    }
-
-    public String getUserInfoUrl() {
-        return userInfoUrl;
+        try (Connection connection = dataSource.getConnection()) {
+            String sql = String.format(
+                    "select aes_decrypt(secret, '%s') as secret from cas_wecom_appliers where corpid = '%s' and profile = '%s'",
+                    encryptKey, corpId, profile);
+            ResultSet resultSet = connection.createStatement().executeQuery(sql);
+            if (resultSet.next()) {
+                return resultSet.getString("secret");
+            }
+        }
+        catch (SQLException e) {
+            log.error("getSecret error: ", e);
+        }
+        return null;
     }
 
     public String getStaffCode(String userId, String corpId)
     {
-        String staffCode = null;
-        // todo
+        String staffCode;
         String sql = """
                 select staff_code from staff_bind_we_chat
                 where we_chat_user_id  = '%s' and we_chat_corp_id = '%s'
                 """.formatted(userId, corpId);
-        try {
+
+        try (Connection connection = dataSource.getConnection()) {
             ResultSet resultSet = connection.createStatement().executeQuery(sql);
             if (resultSet.next()) {
                 staffCode = resultSet.getString("staff_code");
                 resultSet.close();
-            } else {
+            }
+            else {
                 staffCode = "";
             }
         }

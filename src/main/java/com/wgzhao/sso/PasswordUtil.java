@@ -1,49 +1,48 @@
 package com.wgzhao.sso;
 
-import cn.hutool.core.util.CharsetUtil;
-import cn.hutool.crypto.symmetric.AES;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Objects;
-import java.util.UUID;
+import java.util.Map;
 
+@Slf4j
 public class PasswordUtil
 {
-    private static final Logger LOG = LoggerFactory.getLogger(PasswordUtil.class);
-    private final static byte[] key = "24063f35a511a2f3d088cd2fe2143981".getBytes();
-    private final static byte[] salt = "DYgjCEIKaJa2W9xN".getBytes();
-
-    private final static String pseudo = "37617d22";
-
-    private static final AES aes = new AES("CBC", "PKCS7Padding", key, salt);
-
     private static final String passPrefix = "$1$2";
 
-    public static String encryptPassword(String password)
-    {
-        return passPrefix + aes.encryptHex(password) + generateSuffix();
-    }
+    // map each digital to its alphabet
+    private static final Map<String, String> d2a = Map.of(
+            "0", "c", "1", "p", "2", "m", "3", "E", "4", "j",
+            "5", "A", "6", "n", "7", "_", "8", "x", "9", "z");
+    // alphabetize to digital
+    private static final Map<String, String> a2d = Map.of(
+            "c", "0", "p", "1", "m", "2", "E", "3", "j", "4",
+            "A", "5", "n", "6", "_", "7", "x", "8", "z", "9");
+    private static final int MAX_PASSWORD_AGE = 5 * 60 * 1000;
 
-    // generate random 3 hex chars
-    public static String generateSuffix()
+    public static String encryptPassword()
     {
-        return UUID.randomUUID().toString().substring(0, 3);
+        long l = System.currentTimeMillis() * 3;
+        log.info("current ts=" + l);
+        // convert the l to string and reverse it
+        String s = new StringBuilder(String.valueOf(l)).reverse().toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append(passPrefix);
+        for (int i = 0; i < s.length(); i++) {
+            sb.append(d2a.get(s.charAt(i) + ""));
+        }
+        return sb.toString();
     }
 
     public static String decryptPassword(String password)
     {
-        if (password.startsWith(passPrefix)) {
-            password = password.substring(passPrefix.length(), password.length() - 3);
+        StringBuilder k = new StringBuilder();
+        //skip passPrefix
+        for (int i = 4; i < password.length(); i++) {
+            k.append(a2d.get(password.charAt(i) + ""));
         }
-        try {
-            return aes.decryptStr(password, CharsetUtil.CHARSET_UTF_8);
-        }
-        catch (Exception e) {
-            LOG.error("decrypt the password failed: ", e);
-            return null;
-        }
+        log.info("decrypt password=" + k.toString());
+        return k.reverse().toString();
     }
 
     public static boolean isWecomPassword(String password)
@@ -56,14 +55,21 @@ public class PasswordUtil
 
     public static String getEncryptPassword()
     {
-        return encryptPassword(pseudo);
+        return encryptPassword();
     }
 
     public static boolean isPseudoPassword(String password)
     {
-        if (StringUtils.isBlank(password)) {
-            return false;
-        }
-        return password.startsWith(passPrefix) && Objects.equals(decryptPassword(password), pseudo);
+        return isWecomPassword(password) &
+                System.currentTimeMillis() - Long.parseLong(decryptPassword(password)) / 3 < MAX_PASSWORD_AGE;
+    }
+
+    public static void main(String[] args)
+    {
+        String enc = encryptPassword();
+        System.out.printf("enc=%s\n", enc);
+        String dec = decryptPassword(enc);
+        System.out.printf("dec=%s\n", dec);
+        System.out.println(isPseudoPassword(enc));
     }
 }

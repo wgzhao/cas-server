@@ -1,64 +1,56 @@
 <!DOCTYPE html>
-<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.w3.org/1999/xhtml"
-      layout:decorate="~{layout}">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout}">
 
 <head>
-    <title th:text="#{cas.login.pagetitle}">CAS Login View</title>
-    <link href="../../static/css/cas.css" rel="stylesheet" th:remove="tag"/>
+    <meta charset="UTF-8">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="screen-orientation" content="portrait">
+    <title>统一认证平台</title>
 </head>
 
-<body class="login mdc-typography">
-<div layout:fragment="content" class="d-flex justify-content-center">
-    <div class="d-flex justify-content-center flex-md-row flex-column mdc-card mdc-card-content card flex-grow-1"
-         th:with="loginFormEnabled=${#strings.defaultString(#themes.code('cas.login-form.enabled'), 'true') == 'true'},
-                  loginFormViewable=${@casThymeleafTemplatesDirector.isLoginFormViewable(#vars)}">
-        <section id="loginForm"
-                 th:if="${loginFormViewable and loginFormEnabled}"
-                 class="login-section login-form card-body" style="display:none">
-            <div th:replace="~{fragments/loginform :: loginform}">
-                <a href="fragments/loginform.html">Login Form goes here</a>
-            </div>
-        </section>
-        <span th:if="${#bools.isFalse(delegatedAuthenticationDynamicProviderSelection) && #bools.isFalse(delegatedAuthenticationDisabled)}">
-            <section id="loginProviders" class="login-section login-providers card-body"
-                     th:if="${delegatedAuthenticationProviderConfigurations} OR ${wsfedUrls}">
-                <div th:replace="~{fragments/loginProviders :: loginProviders}">
-                    <a href="fragments/loginProviders.html">loginProviders</a>
-                </div>
-            </section>
-        </span>
-        <section id="qrlogin" class="login-section login-qr d-xs-none d-md-block card-body">
-            <!--            <div th:replace="~{fragments/qrAuthentication :: qrAuthentication}">-->
-            <!--                <a href="fragments/qrAuthentication.html">qrAuthentication</a>-->
-            <!--            </div>-->
-            <div class="card bg-light">
-                <div class="card-body pb-4">
-                    <div class="card-title">
-                        <div class="text-center">
-                            <section>
-                                <div id="qrerror" class="banner banner-danger alert alert-danger banner-dismissible"
-                                     style="display:none;">
-                                    <p th:utext="#{cas.authn.qr.fail}">Error</p>
-                                </div>
-                                <div id="corpDiv">
-                                </div>
-                            </section>
-                        </div>
-                    </div>
-                    <div class="card-text">
-                        <div class="text-center">
-                            <div id="wx_div"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<body>
+    <div layout:fragment="content" class="big-content">
+        <div class="main-content">
+            <ul class="qr-code-corp-wrap" id="corpDiv">
+            </ul>
+            <div class="qr-code-img-wrap relative">
+                <div class="login-container">
+                    <h3>扫码登录</h3>
+                    <div class="text-center">
+                        <div id="wx_gp51"></div>
 
-            <script th:inline="javascript">
-               wxQR();
-            </script>
-    </section>
-</div>
-</div>
+                            <section id="loginForm" th:if="'true' == ${@environment.getProperty('wecom.login-form.enabled')}">
+                                <h3>账号密码登录</h3>
+                                <form  method="post" id="fm1" th:object="${credential}" action="login">
+                                    <div class="form-group">
+                                        <input type="text" id="username" required placeholder="请输入您的账号"
+                                               th:field="*{username}"
+                                               autocapitalize="none"
+                                               spellcheck="false"
+                                        >
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="password" id="password" required placeholder="请输入您的密码" th:field="*{password}">
+                                    </div>
+                                    <input type="hidden" name="execution" th:value="${flowExecutionKey}"/>
+                                    <input type="hidden" name="_eventId" value="submit"/>
+                                    <input type="hidden" name="geolocation"/>
+                                    <div class="form-group-btn">
+                                        <button type="submit">登 录</button>
+                                    </div>
+                                </form>
+                            </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script th:inline="javascript">
+            wxQR();
+        </script>
+    </div>
+
 </body>
 
 </html>
