@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:21
+FROM nexus.gp51.com/azul/zulu-openjdk:21
 
 ARG version
 ARG project_name
