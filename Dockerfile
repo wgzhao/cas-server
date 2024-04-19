@@ -1,4 +1,4 @@
-FROM nexus.gp51.com/azul/zulu-openjdk:21
+FROM azul/zulu-openjdk:21
 
 ARG version
 ARG project_name
@@ -7,7 +7,7 @@ ADD ./target/${project_name}-${version}.war /usr/app/${project_name}-${version}.
 
 WORKDIR /usr/app
 
-EXPOSE 8080 8443
+EXPOSE 8080 
 
 ENV VERSION=${version} PROJECT_NAME=${project_name}
 
