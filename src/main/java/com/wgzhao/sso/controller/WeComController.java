@@ -1,19 +1,33 @@
 package com.wgzhao.sso.controller;
 
-import com.wgzhao.sso.dto.CorpInfo;
-import cn.hutool.http.HttpRequest;
-import cn.hutool.http.HttpResponse;
-import cn.hutool.http.HttpStatus;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import com.wgzhao.sso.PasswordUtil;
+import com.wgzhao.sso.cas.WeComAuthenticationHandler;
+import com.wgzhao.sso.dto.CorpInfo;
 import com.wgzhao.sso.service.WeComService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.apereo.cas.CentralAuthenticationService;
+import org.apereo.cas.authentication.AuthenticationHandlerExecutionResult;
+import org.apereo.cas.authentication.AuthenticationServiceSelectionPlan;
+import org.apereo.cas.authentication.AuthenticationSystemSupport;
+import org.apereo.cas.authentication.Credential;
+import org.apereo.cas.authentication.DefaultAuthenticationBuilder;
+import org.apereo.cas.authentication.DefaultAuthenticationHandlerExecutionResult;
+import org.apereo.cas.authentication.principal.PrincipalFactory;
+import org.apereo.cas.authentication.principal.Service;
+import org.apereo.cas.authentication.principal.WebApplicationServiceFactory;
+import org.apereo.cas.services.ServicesManager;
+import org.apereo.cas.ticket.TicketGrantingTicket;
+import org.apereo.cas.ticket.ServiceTicket;
+import org.apereo.cas.authentication.Authentication;
+import org.apereo.cas.authentication.AuthenticationResult;
+import org.apereo.cas.authentication.AuthenticationResultBuilder;
+import org.apereo.cas.authentication.AuthenticationHandler;
+import org.apereo.cas.authentication.credential.UsernamePasswordCredential;
+import org.apereo.cas.authentication.principal.Principal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -23,14 +37,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 
 @RestController
 @RequestMapping("/v1/wecom")
@@ -38,11 +49,7 @@ import java.util.Map;
 @Slf4j
 public class WeComController
 {
-    private static Date expireTime;
-    private static String accessToken;
-
-    @Value("${wecom.binding.url}")
-    private String bindingUrl;
+    private static final HashMap<String, Map<String, Object>> accessTokens = new HashMap<>();
 
     @Autowired
     WeComService weComService;
@@ -50,44 +57,165 @@ public class WeComController
     @Value("${cas.server.name}")
     private String casServerName;
 
+    @Autowired
+    private CentralAuthenticationService centralAuthenticationService;
+
+    @Autowired
+    private PrincipalFactory principalFactory;
+
+    @Autowired
+    private ServicesManager servicesManager;
+
+    @Autowired
+    private AuthenticationServiceSelectionPlan authenticationServiceSelectionPlan;
+
+    @Autowired
+    private WebApplicationServiceFactory webApplicationServiceFactory;
+
+    @Autowired
+    private AuthenticationSystemSupport authenticationSystemSupport;
+
+
     @GetMapping(value = "/callback")
     public void callback(HttpServletRequest request, HttpServletResponse response, @RequestParam("code") String code)
             throws IOException
     {
         String queryString = request.getQueryString();
+        String serviceUrl = request.getParameter("service");
+        log.info("queryString from request: = <{}>", queryString);
+        log.info("callback service url: = <{}>", request.getParameter("service"));
         String redirectUrl;
+
         String corpId = request.getParameter("appid");
         String corpSecret = weComService.getSecret(corpId);
         setAccessToken(corpId, corpSecret);
-        String userId = getUserInfo(code);
+        String userId = getUserInfo(corpId, code);
         if (userId == null) {
-            log.error("get user info failed");
+            redirectUrl = casServerName + "/cas/login?service=" + serviceUrl;
+            log.error("get user info failed, redirect to {}", redirectUrl);
+            response.sendRedirect(redirectUrl);
             return;
         }
         String staffCode = weComService.getStaffCode(userId, corpId);
         if (staffCode == null || staffCode.isEmpty()) {
-            log.info("UserId({}) with corpId({}) not found ,prepare redirect to {}", userId, corpId, bindingUrl);
-            redirectUrl = "%s?weChatCorpId=%s&weChatUserId=%s".formatted(bindingUrl, corpId, userId);
-            response.sendRedirect(redirectUrl);
+            log.info("UserId({}) with corpId({}) not found ", userId, corpId);
+            response.sendRedirect(casServerName + "/cas/login?service=" + serviceUrl);
             return;
         }
-        String service = request.getParameter("service");
-        log.info("service: {}", service);
-        String encodedService = encodeServiceUrl(service);
-        log.info("encoded service: {}", encodedService);
-        String st = getST(staffCode, encodedService);
-        redirectUrl = encodedService + "&ticket=" + st;
-        log.info("redirect url: {}", redirectUrl);
-        response.sendRedirect(redirectUrl);
+        log.info("Target service: {}", serviceUrl);
 
+        try {
+            // *** OPTIMIZED TICKET GENERATION ***
+            String st = grantServiceTicketInternal(staffCode, serviceUrl);
+            if (st == null) {
+                // Handle error - e.g., redirect to an error page or CAS login page
+                log.error("Failed to grant Service Ticket for user {} and service {}", staffCode, serviceUrl);
+                response.sendRedirect(casServerName + "/cas/login?service=" + serviceUrl);
+                return;
+            }
+
+            // *** Append ST and Redirect ***
+            // Use the original service URL, not the encoded one, as CAS handles encoding during validation
+            redirectUrl = serviceUrl + (serviceUrl.contains("?") ? "&" : "?") + "ticket=" + st;
+            log.info("Redirecting to service with ST: {}", redirectUrl);
+            response.sendRedirect(redirectUrl);
+        }
+        catch (Throwable e) {
+            log.error("Error during internal ticket granting for user {}: {}", staffCode, e.getMessage(), e);
+            // Handle error - e.g., redirect to an error page
+            response.sendRedirect(casServerName + "/cas/login?service=" + serviceUrl);
+        }
+    }
+
+    /**
+     * Grants a Service Ticket internally using CentralAuthenticationService.
+     *
+     * @param username The authenticated username (staffCode).
+     * @param serviceUrl The target service URL.
+     * @return The Service Ticket ID, or null if granting fails.
+     * @throws Throwable For underlying exceptions during ticket creation/granting.
+     */
+    private String grantServiceTicketInternal(String username, String serviceUrl)
+            throws Throwable
+    {
+        // 1. Create Principal for the authenticated user
+        // Add attributes if needed, like the authentication type
+        Map<String, List<Object>> principalAttributes = new HashMap<>();
+        principalAttributes.put("authType", List.of("wecom")); // Indicate WeCom authentication
+        // Add other attributes if your services expect them
+        Principal principal = this.principalFactory.createPrincipal(username, principalAttributes);
+        log.debug("Created principal for user: {}", username);
+
+        // 2. Build Authentication object
+        // We represent the successful authentication via WeCom.
+        ZonedDateTime authDate = ZonedDateTime.now(); // Use an injected clock
+        String handlerName = WeComAuthenticationHandler.class.getSimpleName(); // Name of your handler
+        AuthenticationHandlerExecutionResult handlerResult = getAuthenticationHandlerExecutionResult(username, handlerName, principal);
+
+        // Use the builder
+        Authentication authentication = DefaultAuthenticationBuilder.newInstance()
+                .setPrincipal(principal)
+                .setAuthenticationDate(authDate)
+                .addAttribute(AuthenticationHandler.SUCCESSFUL_AUTHENTICATION_HANDLERS, List.of(handlerName)) // Standard attribute
+                .addSuccess(handlerName, handlerResult) // Link the handler success
+                // Add other optional authentication attributes if needed
+                // .addAttribute("someAuthnAttribute", "value")
+                .build();
+        log.debug("Built authentication object for principal: {}", principal.getId());
+
+        // 3. Build AuthenticationResult (required for TGT/ST granting)
+        final AuthenticationResultBuilder builder = authenticationSystemSupport.getAuthenticationResultBuilderFactory().newBuilder();
+        builder.collect(authentication); // Feed the built Authentication
+        AuthenticationResult authenticationResult = builder.build(authenticationSystemSupport.getPrincipalElectionStrategy());
+
+        // 4. Create TGT
+        TicketGrantingTicket tgt = centralAuthenticationService.createTicketGrantingTicket(authenticationResult);
+        String tgtId = tgt.getId();
+        log.info("Successfully created TGT internally: {}", tgtId);
+
+        // 5. Create and Validate a Service object
+        Service service = this.webApplicationServiceFactory.createService(serviceUrl);
+        var registeredService = this.servicesManager.findServiceBy(service);
+        if (registeredService == null || !registeredService.getAccessStrategy().isServiceAccessAllowed(registeredService, service)) { // Check access strategy with TGT context
+            log.error("Service [{}] is not registered, not enabled, or access denied by strategy.", serviceUrl);
+            throw new RuntimeException("Service not allowed: " + serviceUrl); // More specific error if possible
+        }
+        log.info("Target service [{}] found and allowed.", serviceUrl);
+
+        // 6. Grant ST
+        ServiceTicket st = centralAuthenticationService.grantServiceTicket(tgtId, service, authenticationResult);
+        String stId = st.getId();
+        log.info("Successfully granted ST internally: {}", stId);
+
+        return stId;
+    }
+
+    private AuthenticationHandlerExecutionResult getAuthenticationHandlerExecutionResult(String username, String handlerName, Principal principal)
+    {
+        WeComAuthenticationHandler weComAuthenticationHandler = new WeComAuthenticationHandler(handlerName, servicesManager, principalFactory, 1);
+        // Create a minimal placeholder credential.
+        // This isn't used for validation here; it's just to satisfy the constructor.
+        // Using UsernamePasswordCredential as a concrete, known type.
+        Credential placeholderCredential = new UsernamePasswordCredential(username, "dummyPasswordFromWeComCallback");
+
+        // Create the result using the placeholder credential
+        // Assuming the constructor (String, Credential, Principal) exists.
+        // If not, check available constructors in CAS 7.0.2 for DefaultAuthenticationHandlerExecutionResult.
+        // Another common signature might involve warnings/errors lists.
+        return new DefaultAuthenticationHandlerExecutionResult(weComAuthenticationHandler, placeholderCredential, principal);
     }
 
     private void setAccessToken(String corpId, String corpSecret)
     {
         long curTs = System.currentTimeMillis();
-        if (expireTime != null && curTs < expireTime.getTime()) {
-            // token is still valid
-            log.info("token is still valid");
+        Map<String, Object> tokenMap = accessTokens.getOrDefault(corpId, null);
+        if (tokenMap != null) {
+            long expireTime = (long) tokenMap.get("expireTime");
+            if (curTs < expireTime) {
+                // the token is still valid
+                log.info("token is still valid");
+                return;
+            }
         }
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("corpid", corpId);
@@ -100,9 +228,15 @@ public class WeComController
             }
             else {
                 log.info("get access token success");
-                accessToken = jsonObject.getStr("access_token");
-                expireTime = new Date(curTs + jsonObject.getInt("expires_in", 7200) * 1000 - 60);
-                log.info("set expire time: {}", expireTime.toString());
+
+                String token = jsonObject.getStr("access_token");
+                long expireTime = new Date(curTs + jsonObject.getInt("expires_in", 7200) * 1000 - 300 * 1000).getTime();
+                // set token and expire time
+                tokenMap = new HashMap<>();
+                tokenMap.put("token", token);
+                tokenMap.put("expireTime", expireTime);
+                accessTokens.put(corpId, tokenMap);
+                log.info("set expire time {} with corpId: {}", expireTime, corpId);
             }
         }
         catch (Exception e) {
@@ -110,16 +244,16 @@ public class WeComController
         }
     }
 
-    private String getUserInfo(String code)
+    private String getUserInfo(String corpId, String code)
     {
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("code", code);
-        paramMap.put("access_token", accessToken);
+        paramMap.put("access_token", accessTokens.get(corpId).get("token"));
         String result = HttpUtil.get(weComService.getUserInfoUrl(), paramMap);
         try {
             JSONObject jsonObject = JSONUtil.parseObj(result);
             if (jsonObject.getInt("errcode") != 0) {
-                log.error("get user info failed: {}",  jsonObject.getStr("errmsg"));
+                log.error("get user info failed: {}", jsonObject.getStr("errmsg"));
                 return null;
             }
             else {
@@ -136,74 +270,5 @@ public class WeComController
     public List<CorpInfo> getCorpInfo()
     {
         return weComService.getCorpInfo();
-    }
-
-    private String getST(String username, String service)
-    {
-        Map<String, Object> paramMap = new HashMap<>();
-        paramMap.put("username", username);
-        paramMap.put("password", PasswordUtil.getEncryptPassword());
-        // step 1. auth and get TGT
-        HttpResponse response =  HttpRequest.post(casServerName + "/cas/v1/tickets")
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .form(paramMap)
-                .execute();
-        if (response.getStatus() != HttpStatus.HTTP_CREATED) {
-            log.error("create tgt failed: {}", response.body());
-            throw new RuntimeException("create tgt failed");
-        }
-        String[] locations = response.header("Location").split("/");
-        String tgt = locations[locations.length - 1];
-        // step 2. get ST
-        response = HttpRequest.post(casServerName + "/cas/v1/tickets/" + tgt + "?service=" + service)
-                .execute();
-        if (response.getStatus() != HttpStatus.HTTP_OK) {
-            log.error("get st failed: {}", response.body());
-            throw new RuntimeException("get st failed");
-        }
-        return response.body();
-    }
-
-    private Map<String, String> getQueryMap(String query) {
-        String[] params = query.split("&");
-        Map<String, String> map = new HashMap<String, String>();
-
-        for (String param : params) {
-            String name = param.split("=")[0];
-            String value = param.split("=")[1];
-            map.put(name, value);
-        }
-        return map;
-    }
-
-    private String encodeServiceUrl(String s){
-        URL url;
-        try {
-            url = new URL(s);
-        } catch (Exception e) {
-            log.error("invalid url: {}", s);
-            return s;
-        }
-        String q = url.getQuery().split("redirect=")[1];
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(url.getProtocol()).append("://").append(url.getHost());
-        if (url.getPort() > 0) {
-            sb.append(":").append(url.getPort());
-        }
-        sb.append(url.getPath());
-
-        if (q.contains("?")) {
-            sb.append("?redirect=").append(URLEncoder.encode(q, StandardCharsets.UTF_8));
-        } else {
-            if (q.contains("&")) {
-                String[] split = q.split("&", 2);
-                sb.append("?redirect=").append(URLEncoder.encode(split[0], StandardCharsets.UTF_8)).append("?").append(split[1]);
-            } else {
-                sb.append("?redirect=").append(URLEncoder.encode(q, StandardCharsets.UTF_8));
-            }
-        }
-
-        return sb.toString();
     }
 }

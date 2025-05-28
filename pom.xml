@@ -47,6 +47,12 @@
             <version>${cas.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.apereo.cas</groupId>
+            <artifactId>cas-server-core-services-authentication</artifactId>
+            <version>${cas.version}</version>
+        </dependency>
+
         <!-- for custom REST api -->
         <dependency>
             <groupId>org.apereo.cas</groupId>
