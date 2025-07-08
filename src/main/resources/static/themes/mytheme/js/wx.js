@@ -28,25 +28,58 @@ function getWecomQR(obj, idx) {
     }
     var corpInfo = JSON.parse(localStorage.corpInfo);
     var weParam = corpInfo[idx];
-    weParam["id"] = "wx_div";
-    // add redirect_uri via current location
-    var redirect_uri;
-    if (location.port === "") {
-        redirect_uri = location.protocol + "//" + location.hostname + "/cas/v1/wecom/callback";
-    } else {
-        redirect_uri = location.protocol + "//" + location.hostname + ":" + location.port + "/cas/v1/wecom/callback";
-    }
-    weParam["redirect_uri"] = redirect_uri;
+    var appid =  weParam['appid'];
+    var agentid = weParam['agentid'];
     var params = new URLSearchParams(window.location.search)
-    if (params.get('service')) {
-        weParam['redirect_uri'] = weParam['redirect_uri'] + '?service=' + encodeURIComponent(params.get('service'));
-    }
-    console.log("redirect_uri = <" + weParam['redirect_uri'] + ">");
-    window.WwLogin(weParam);
+    // set the appid to the cookie
+    document.cookie = "cur=" + idx + "; path=/; SameSite=Lax";
+    // clear previous login panel if exists
+    $('#wx_div').empty();
+    var request_path = '/cas/v1/wecom/callback';
+    ww.createWWLoginPanel({
+      el: "#wx_div",
+      params: {
+          login_type: 'CorpApp',
+          appid: appid,
+          agentid: agentid,
+          redirect_uri: location.protocol + "//" + location.host + request_path,
+          state: 'WWLogin',
+          redirect_type: 'callback',
+          panel_size: 'small',
+      },
+      onLoginSuccess({ code }) {
+            console.log({ code })
+            var service = params.get('service') || location.href;
+              $.ajax({
+                url: `${request_path}?code=${code}&corpId=${appid}&service=${encodeURIComponent(service)}`,
+                type: 'GET',
+                dataType: 'json',
+                contentType: 'application/json',
+                success: function(data) {
+                    if (data.code == 200) {
+                        const st = data.data.ticket;
+                        if (service.indexOf('?') > -1) {
+                            service = service + '&ticket=' + st;
+                        } else {
+                            service = service + '?ticket=' + st;
+                        }
+                        location.href = service;
+                    }
+                    else if (data.code = 601) {
+                        location.href = data.data.bindingUrl;
+                    } else {
+                        alert("登录失败，" + data.msg);
+                    }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                      console.error("Failed to fetch corpInfo:", textStatus, errorThrown);
+                  }
+                });
+          },
+     });
 }
 
 function getCorpInfo() {
-    if (localStorage.corpInfo == null) {
         $.ajax({
             url: '/cas/v1/wecom/corpInfo',
             type: 'GET',
@@ -56,17 +89,20 @@ function getCorpInfo() {
             success: function (data) {
                 $('#corpDiv').html(json2select(data));
                 localStorage.corpInfo = JSON.stringify(data);
-            }
+            },
+             error: function (xhr, textStatus, errorThrown) {
+                  console.error("Failed to fetch corpInfo:", textStatus, errorThrown);
+              }
         });
-    } else {
-        console.log("get from localStorage");
-        var data = JSON.parse(localStorage.corpInfo);
-        $('#corpDiv').html(json2select(data));
     }
-}
 
 function wxQR() {
-    // initial wecom qrcode
     getCorpInfo();
-    getWecomQR();
+    var idx = 0;
+    if (document.cookie.indexOf("cur") > -1) {
+        // 如果设置 currCorp cookie，那就直接使用用户上一次的选择
+        idx = document.cookie.match(/cur=(\d+)/)[1];
+    }
+    var ele = $("#corpDiv").children("li")[idx] || null;
+    getWecomQR(ele, idx);
 }

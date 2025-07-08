@@ -5,6 +5,7 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.wgzhao.sso.cas.WeComAuthenticationHandler;
 import com.wgzhao.sso.dto.CorpInfo;
+import com.wgzhao.sso.dto.RspDto;
 import com.wgzhao.sso.service.WeComService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,6 +29,7 @@ import org.apereo.cas.authentication.AuthenticationResultBuilder;
 import org.apereo.cas.authentication.AuthenticationHandler;
 import org.apereo.cas.authentication.credential.UsernamePasswordCredential;
 import org.apereo.cas.authentication.principal.Principal;
+import org.apereo.cas.web.cookie.CasCookieBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -75,58 +77,52 @@ public class WeComController
     @Autowired
     private AuthenticationSystemSupport authenticationSystemSupport;
 
+    @Autowired
+    private CasCookieBuilder ticketGrantingTicketCookieGenerator;
 
     @GetMapping(value = "/callback")
-    public void callback(HttpServletRequest request, HttpServletResponse response, @RequestParam("code") String code)
+    public RspDto callback(HttpServletRequest request, HttpServletResponse response, @RequestParam("code") String code, @RequestParam("corpId") String corpId)
             throws IOException
     {
+        RspDto result = new RspDto();
         String queryString = request.getQueryString();
         String serviceUrl = request.getParameter("service");
-        log.info("queryString from request: = <{}>", queryString);
-        log.info("callback service url: = <{}>", request.getParameter("service"));
-        String redirectUrl;
 
-        String corpId = request.getParameter("appid");
+        log.info("queryString from request: = <{}>", queryString);
+        log.info("callback service url: = <{}>", serviceUrl);
         String corpSecret = weComService.getSecret(corpId);
         setAccessToken(corpId, corpSecret);
         String userId = getUserInfo(corpId, code);
         if (userId == null) {
-            redirectUrl = casServerName + "/cas/login?service=" + serviceUrl;
-            log.error("get user info failed, redirect to {}", redirectUrl);
-            response.sendRedirect(redirectUrl);
-            return;
+            result.setCode(404);
+            result.setMsg("UserId not found, please try again later");
+            return result;
         }
-        String staffCode = weComService.getStaffCode(userId, corpId);
-        if (staffCode == null || staffCode.isEmpty()) {
-            log.info("UserId({}) with corpId({}) not found ", userId, corpId);
-            response.sendRedirect(casServerName + "/cas/login?service=" + serviceUrl);
-            return;
-        }
-        log.info("Target service: {}", serviceUrl);
-
+        String st;
         try {
-            // *** OPTIMIZED TICKET GENERATION ***
-            String st = grantServiceTicketInternal(staffCode, serviceUrl);
+            st = grantServiceTicketInternal(userId, serviceUrl, request, response);
             if (st == null) {
                 // Handle error - e.g., redirect to an error page or CAS login page
-                log.error("Failed to grant Service Ticket for user {} and service {}", staffCode, serviceUrl);
-                response.sendRedirect(casServerName + "/cas/login?service=" + serviceUrl);
-                return;
+                log.error("Failed to grant Service Ticket for user {} and service {}", userId, serviceUrl);
+                result.setCode(701);
+                result.setMsg("Failed to grant Service Ticket, please try again later.");
+                return result;
             }
 
             // *** Append ST and Redirect ***
             // Use the original service URL, not the encoded one, as CAS handles encoding during validation
-            redirectUrl = serviceUrl + (serviceUrl.contains("?") ? "&" : "?") + "ticket=" + st;
-            log.info("Redirecting to service with ST: {}", redirectUrl);
-            response.sendRedirect(redirectUrl);
+//            redirectUrl = serviceUrl + (serviceUrl.contains("?") ? "&" : "?") + "ticket=" + st;
+            result.setCode(200);
+            result.setMsg("Service Ticket granted successfully");
+            result.setData(Map.of("ticket", st));
+            return result;
         }
         catch (Throwable e) {
-            log.error("Error during internal ticket granting for user {}: {}", staffCode, e.getMessage(), e);
-            // Handle error - e.g., redirect to an error page
-            response.sendRedirect(casServerName + "/cas/login?service=" + serviceUrl);
+            result.setCode(500);
+            result.setMsg("Internal error during ticket granting: " + e.getMessage());
+            return result;
         }
     }
-
     /**
      * Grants a Service Ticket internally using CentralAuthenticationService.
      *
@@ -135,7 +131,7 @@ public class WeComController
      * @return The Service Ticket ID, or null if granting fails.
      * @throws Throwable For underlying exceptions during ticket creation/granting.
      */
-    private String grantServiceTicketInternal(String username, String serviceUrl)
+    private String grantServiceTicketInternal(String username, String serviceUrl, HttpServletRequest request, HttpServletResponse response)
             throws Throwable
     {
         // 1. Create Principal for the authenticated user
@@ -171,6 +167,7 @@ public class WeComController
         // 4. Create TGT
         TicketGrantingTicket tgt = centralAuthenticationService.createTicketGrantingTicket(authenticationResult);
         String tgtId = tgt.getId();
+        ticketGrantingTicketCookieGenerator.addCookie(request, response, tgtId);
         log.info("Successfully created TGT internally: {}", tgtId);
 
         // 5. Create and Validate a Service object
