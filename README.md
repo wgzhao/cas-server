@@ -13,7 +13,7 @@
 ## 运行方式
 
 ```
-java -Dspring.profiles.include=dev -jar target/cas-1.5.0-SNAPSHOT.war
+java -jar target/cas-1.5.0-SNAPSHOT.war --spring.profiles.include=dev --cas.login-form.enabled=true
 ```
 
 企微的主体相关信息保存在数据库中，表结构如下：
