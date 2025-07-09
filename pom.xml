@@ -78,17 +78,18 @@
             <version>${cas.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apereo.cas</groupId>
-            <artifactId>cas-server-support-redis-ticket-registry</artifactId>
-            <version>${cas.version}</version>
-        </dependency>
+        <!-- for custom service registry -->
+<!--        <dependency>-->
+<!--            <groupId>org.apereo.cas</groupId>-->
+<!--            <artifactId>cas-server-support-redis-ticket-registry</artifactId>-->
+<!--            <version>${cas.version}</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>org.apereo.cas</groupId>
-            <artifactId>cas-server-support-redis-service-registry</artifactId>
-            <version>${cas.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apereo.cas</groupId>-->
+<!--            <artifactId>cas-server-support-redis-service-registry</artifactId>-->
+<!--            <version>${cas.version}</version>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -112,6 +113,12 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.30</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.50.1.0</version>
         </dependency>
 
     </dependencies>
@@ -187,12 +194,6 @@
 				<profileActive>test</profileActive>
 			</properties>
 		</profile>
-        <profile>
-            <id>uat</id>
-            <properties>
-                <profileActive>uat</profileActive>
-            </properties>
-        </profile>
 		<profile>
 			<id>prod</id>
 			<properties>

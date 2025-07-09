@@ -63,6 +63,10 @@ aside, section, main {
     display: flex;
 }
 
+.main-content .wecom-corp-wrap {
+ flex: 2;
+}
+
 .mdc-top-app-bar {
     z-index: 7;
 }

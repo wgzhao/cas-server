@@ -13,8 +13,6 @@
 <body>
     <div layout:fragment="content" class="big-content">
         <div class="main-content">
-            <ul class="qr-code-corp-wrap" id="corpDiv">
-            </ul>
             <div class="qr-code-img-wrap relative">
                 <div class="login-container">
                     <h3>扫码登录</h3>
@@ -45,12 +43,14 @@
                     </div>
                 </div>
             </div>
+            <div class="wecom-corp-wrap">
+                <ul class="qr-code-corp-wrap" id="corpDiv">
+                </ul>
+            </div>
         </div>
         <script th:inline="javascript">
             wxQR();
         </script>
     </div>
-
 </body>
-
 </html>
