@@ -21,7 +21,7 @@
                     <div class="text-center">
                         <div id="wx_div"></div>
 
-                            <section id="loginForm" th:if="'true' == ${@environment.getProperty('wecom.login-form.enabled')}">
+                            <section id="loginForm" th:if="'true' == ${@environment.getProperty('cas.login-form.enabled')}">
                                 <h3>账号密码登录</h3>
                                 <form  method="post" id="fm1" th:object="${credential}" action="login">
                                     <div class="form-group">
