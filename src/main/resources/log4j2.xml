@@ -16,6 +16,12 @@
         <AsyncLogger name="org.apereo.cas.web.CasWebApplication" level="warn" additivity="false" includeLocation="true">
             <AppenderRef ref="casConsole"/>
         </AsyncLogger>
+        <AsyncLogger name="org.apereo.cas.ticket.registry.DefaultTicketRegistryCleaner" level="warn" additivity="false" includeLocation="true">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
+        <AsyncLogger name="org.apereo.cas.services.mgmt.AbstractServicesManager" level="warn" additivity="false" includeLocation="true">
+            <AppenderRef ref="casConsole"/>
+        </AsyncLogger>
         <AsyncLogger name="org.springframework.security" level="warn" additivity="false">
             <AppenderRef ref="casConsole"/>
         </AsyncLogger>

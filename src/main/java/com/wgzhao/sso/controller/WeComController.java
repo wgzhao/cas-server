@@ -69,9 +69,6 @@ public class WeComController
     private ServicesManager servicesManager;
 
     @Autowired
-    private AuthenticationServiceSelectionPlan authenticationServiceSelectionPlan;
-
-    @Autowired
     private WebApplicationServiceFactory webApplicationServiceFactory;
 
     @Autowired

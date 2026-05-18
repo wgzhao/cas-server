@@ -1,3 +1,4 @@
 com.wgzhao.sso.config.WeComOverlayConfiguration
+com.wgzhao.sso.config.JdbcAuthenticationOptimizationConfiguration
 com.wgzhao.sso.controller.WeComController
 com.wgzhao.sso.service.WeComService
